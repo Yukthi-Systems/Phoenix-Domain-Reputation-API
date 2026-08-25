@@ -1,0 +1,4 @@
+.env
+/domain-reputation-server
+/bin/
+*.log

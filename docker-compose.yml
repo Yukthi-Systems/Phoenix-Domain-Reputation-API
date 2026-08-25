@@ -1,0 +1,12 @@
+services:
+  phoenix-domain-reputation:
+    image: rjyspl/phoenix-domain-reputation-api
+    container_name: phoenix-domain-reputation
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:8099:8080"
+
+    restart: always

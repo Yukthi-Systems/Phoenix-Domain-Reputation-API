@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question on Discord
+    url: https://discord.com/invite/2BS7Z4FhJ
+    about: For usage questions and general discussion, chat with the community instead of opening an issue.
+  - name: Report a security vulnerability
+    url: mailto:connect@yukthi.com
+    about: Please report security issues privately rather than filing a public issue.

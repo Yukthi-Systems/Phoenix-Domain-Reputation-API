@@ -1,0 +1,42 @@
+### domain-reputation API requests
+### Requires the "REST Client" VS Code extension (humao.rest-client).
+### Run `go run ./cmd/server` first, then click "Send Request" above any block.
+
+@baseUrl = http://localhost:8080
+
+### Health check
+GET {{baseUrl}}/health
+
+### Readiness (503 until the first IPFire snapshot is published)
+GET {{baseUrl}}/ready
+
+### Domain reputation — known domain (score = sum of matching categories)
+GET {{baseUrl}}/v1/reputation/domain/robloxr.com.es
+
+### Domain reputation — normalization (uppercase + trailing dot both resolve the same)
+GET {{baseUrl}}/v1/reputation/domain/EVIL.COM.
+
+### Domain reputation — unknown domain (200 OK, score 0, empty categories)
+GET {{baseUrl}}/v1/reputation/domain/example.com
+
+### Domain reputation — malformed domain (400 Bad Request)
+GET {{baseUrl}}/v1/reputation/domain/%2A%2A%2A
+
+### Score-only endpoint (minimal payload for high-throughput consumers)
+GET {{baseUrl}}/v1/reputation/domain/yukthi.com/score
+
+### Batch domain reputation
+POST {{baseUrl}}/v1/reputation/domains
+Content-Type: application/json
+
+{
+  "domains": ["evil.com", "example.com", "bad.com"]
+}
+
+### Batch domain reputation — empty list (400 Bad Request)
+POST {{baseUrl}}/v1/reputation/domains
+Content-Type: application/json
+
+{
+  "domains": []
+}
