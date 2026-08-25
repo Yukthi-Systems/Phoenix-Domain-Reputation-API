@@ -68,6 +68,9 @@ func ParseDomains(r io.Reader) []string {
 		seen[domain] = struct{}{}
 		domains = append(domains, domain)
 	}
+	if err := scanner.Err(); err != nil {
+		return domains
+	}
 
 	return domains
 }
