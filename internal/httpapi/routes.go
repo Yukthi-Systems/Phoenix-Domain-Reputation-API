@@ -17,18 +17,34 @@ version 3 along with this program. If not, see
 
 package httpapi
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 // NewRouter builds the HTTP routing table for the reputation API.
-func NewRouter(h *Handler) http.Handler {
+//
+// /health and /ready are always open, so orchestrator liveness/readiness
+// probes never need a key. Every /v1/ route requires a valid X-API-Key
+// header if apiKey is non-empty; if apiKey is empty, the /v1/ routes are
+// left unauthenticated (intended for local development only — callers
+// should log a warning when running this way, see cmd/server).
+func NewRouter(h *Handler, apiKey string, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", h.Health)
 	mux.HandleFunc("GET /ready", h.Ready)
 
-	mux.HandleFunc("GET /v1/reputation/domain/{domain}/score", h.DomainScore)
-	mux.HandleFunc("GET /v1/reputation/domain/{domain}", h.DomainReputation)
-	mux.HandleFunc("POST /v1/reputation/domains", h.BatchDomainReputation)
+	v1 := http.NewServeMux()
+	v1.HandleFunc("GET /v1/reputation/domain/{domain}/score", h.DomainScore)
+	v1.HandleFunc("GET /v1/reputation/domain/{domain}", h.DomainReputation)
+	v1.HandleFunc("POST /v1/reputation/domains", h.BatchDomainReputation)
+
+	var v1Handler http.Handler = v1
+	if apiKey != "" {
+		v1Handler = RequireAPIKey(apiKey, logger)(v1)
+	}
+	mux.Handle("/v1/", v1Handler)
 
 	return mux
 }

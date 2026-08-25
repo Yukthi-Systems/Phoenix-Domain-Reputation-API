@@ -61,7 +61,11 @@ func run() error {
 		"server_port", cfg.ServerPort,
 		"update_interval", cfg.UpdateInterval,
 		"http_timeout", cfg.HTTPTimeout,
+		"api_key_configured", cfg.APIKey != "",
 	)
+	if cfg.APIKey == "" {
+		logger.Warn("API_KEY is not set: /v1 reputation endpoints are unauthenticated; set API_KEY before exposing this service outside local development")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -73,7 +77,7 @@ func run() error {
 	handler := httpapi.NewHandler(store, logger)
 	server := &http.Server{
 		Addr:              ":" + cfg.ServerPort,
-		Handler:           httpapi.NewRouter(handler),
+		Handler:           httpapi.NewRouter(handler, cfg.APIKey, logger),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,

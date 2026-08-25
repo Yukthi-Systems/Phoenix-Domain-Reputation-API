@@ -3,6 +3,7 @@
 ### Run `go run ./cmd/server` first, then click "Send Request" above any block.
 
 @baseUrl = http://localhost:8080
+@apiKey = 16aa41b873762469b690c4b6b4a7e691d6c46147f63d76b333cc669ee2844299
 
 ### Health check
 GET {{baseUrl}}/health
@@ -12,21 +13,27 @@ GET {{baseUrl}}/ready
 
 ### Domain reputation — known domain (score = sum of matching categories)
 GET {{baseUrl}}/v1/reputation/domain/robloxr.com.es
+X-API-Key: {{apiKey}}
 
 ### Domain reputation — normalization (uppercase + trailing dot both resolve the same)
 GET {{baseUrl}}/v1/reputation/domain/EVIL.COM.
+X-API-Key: {{apiKey}}
 
 ### Domain reputation — unknown domain (200 OK, score 0, empty categories)
 GET {{baseUrl}}/v1/reputation/domain/example.com
+X-API-Key: {{apiKey}}
 
 ### Domain reputation — malformed domain (400 Bad Request)
 GET {{baseUrl}}/v1/reputation/domain/%2A%2A%2A
+X-API-Key: {{apiKey}}
 
 ### Score-only endpoint (minimal payload for high-throughput consumers)
 GET {{baseUrl}}/v1/reputation/domain/yukthi.com/score
+X-API-Key: {{apiKey}}
 
 ### Batch domain reputation
 POST {{baseUrl}}/v1/reputation/domains
+X-API-Key: {{apiKey}}
 Content-Type: application/json
 
 {
@@ -35,8 +42,13 @@ Content-Type: application/json
 
 ### Batch domain reputation — empty list (400 Bad Request)
 POST {{baseUrl}}/v1/reputation/domains
+X-API-Key: {{apiKey}}
 Content-Type: application/json
 
 {
   "domains": []
 }
+
+### Domain reputation — missing/invalid API key (401 Unauthorized)
+GET {{baseUrl}}/v1/reputation/domain/example.com
+X-API-Key: wrong-key

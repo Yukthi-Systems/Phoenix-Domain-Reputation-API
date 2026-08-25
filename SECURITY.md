@@ -35,6 +35,8 @@ include:
 
 - Input handling for the `{domain}` path parameter and the batch request
   body
+- The `X-API-Key` authentication middleware (`internal/httpapi/middleware.go`)
+  guarding the `/v1/*` routes
 - HTTP client behavior when downloading IPFire lists (timeouts, response
   size limits, TLS)
 - Anything that could allow a malicious IPFire response to affect more

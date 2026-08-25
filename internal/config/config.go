@@ -41,6 +41,7 @@ type CategoryConfig struct {
 // Config holds all application settings.
 type Config struct {
 	ServerPort     string
+	APIKey         string
 	UpdateInterval time.Duration
 	HTTPTimeout    time.Duration
 	LogLevel       string
@@ -86,6 +87,7 @@ func Load() (*Config, error) {
 
 	return &Config{
 		ServerPort:     getEnv("SERVER_PORT", "8080"),
+		APIKey:         getEnv("API_KEY", ""),
 		UpdateInterval: updateInterval,
 		HTTPTimeout:    httpTimeout,
 		LogLevel:       getEnv("LOG_LEVEL", "INFO"),

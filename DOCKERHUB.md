@@ -13,6 +13,7 @@ path. No database required.
 
 ```bash
 docker run --rm -p 8080:8080 \
+  -e API_KEY=your-api-key \
   -e IPFIRE_UPDATE_INTERVAL=1h \
   -e IPFIRE_MALWARE_SCORE=5 \
   rjyspl/phoenix-domain-reputation-api
@@ -20,7 +21,7 @@ docker run --rm -p 8080:8080 \
 
 ```bash
 curl http://localhost:8080/health
-curl http://localhost:8080/v1/reputation/domain/example.com
+curl -H 'X-API-Key: your-api-key' http://localhost:8080/v1/reputation/domain/example.com
 ```
 
 ### With Docker Compose
@@ -28,7 +29,7 @@ curl http://localhost:8080/v1/reputation/domain/example.com
 ```yaml
 services:
   phoenix-domain-reputation:
-    image: rjyspl/Phoenix-Domain-Reputation-API-api
+    image: rjyspl/phoenix-domain-reputation-api
     container_name: phoenix-domain-reputation
     env_file:
       - .env
@@ -54,6 +55,7 @@ mechanism).
 | Variable                    | Default | Description                                          |
 |-------------------------------|---------|---------------------------------------------------------|
 | `SERVER_PORT`                | `8080`  | HTTP listen port                                        |
+| `API_KEY`                    | *(empty)* | Required value of the `X-API-Key` header for every `/v1/*` request. Unset means the `/v1` routes are unauthenticated — set this for anything but local development. |
 | `IPFIRE_UPDATE_INTERVAL`     | `1h`    | Interval between background IPFire list downloads       |
 | `IPFIRE_HTTP_TIMEOUT`        | `30s`   | Per-request timeout for IPFire downloads                |
 | `IPFIRE_GAMBLING_SCORE`      | `2`     | Score added when a domain is on the gambling list       |
@@ -77,6 +79,9 @@ GET  /v1/reputation/domain/{domain}
 GET  /v1/reputation/domain/{domain}/score
 POST /v1/reputation/domains
 ```
+
+Every `/v1/*` request requires an `X-API-Key` header matching the
+configured `API_KEY`; a missing or wrong key returns `401`.
 
 Full API documentation, request examples, and architecture notes live in
 the project [README](https://github.com/Yukthi-Systems/Phoenix-Domain-Reputation-API#readme).

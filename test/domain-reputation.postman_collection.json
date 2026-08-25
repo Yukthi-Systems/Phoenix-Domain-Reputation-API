@@ -2,13 +2,18 @@
   "info": {
     "_postman_id": "5e2f6b7a-9c1e-4b3a-8b0a-4f1a7c6d9e21",
     "name": "domain-reputation API",
-    "description": "Domain reputation lookups backed by the IPFire Domain Blocklist (DBL). Run `go run ./cmd/server` locally, then use the `baseUrl` collection variable to point at any environment.",
+    "description": "Domain reputation lookups backed by the IPFire Domain Blocklist (DBL). Run `go run ./cmd/server` locally, then use the `baseUrl` and `apiKey` collection variables to point at any environment.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "your-api-key",
       "type": "string"
     }
   ],
@@ -26,7 +31,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["health"]
             },
-            "description": "Liveness check. Always 200 once the process is up."
+            "description": "Liveness check. Always 200 once the process is up. Not authenticated."
           },
           "response": []
         },
@@ -40,7 +45,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["ready"]
             },
-            "description": "200 once at least one IPFire snapshot has been published, otherwise 503."
+            "description": "200 once at least one IPFire snapshot has been published, otherwise 503. Not authenticated."
           },
           "response": []
         }
@@ -53,7 +58,12 @@
           "name": "Get reputation - known domain",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/v1/reputation/domain/evil.com",
               "host": ["{{baseUrl}}"],
@@ -67,7 +77,12 @@
           "name": "Get reputation - normalization (uppercase + trailing dot)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/v1/reputation/domain/EVIL.COM.",
               "host": ["{{baseUrl}}"],
@@ -81,7 +96,12 @@
           "name": "Get reputation - unknown domain",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/v1/reputation/domain/example.com",
               "host": ["{{baseUrl}}"],
@@ -95,7 +115,12 @@
           "name": "Get reputation - malformed domain",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/v1/reputation/domain/%2A%2A%2A",
               "host": ["{{baseUrl}}"],
@@ -106,10 +131,34 @@
           "response": []
         },
         {
+          "name": "Get reputation - missing/invalid API key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "wrong-key"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/reputation/domain/example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "reputation", "domain", "example.com"]
+            },
+            "description": "Expects 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
           "name": "Get score only",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/v1/reputation/domain/evil.com/score",
               "host": ["{{baseUrl}}"],
@@ -129,6 +178,10 @@
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -152,6 +205,10 @@
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"

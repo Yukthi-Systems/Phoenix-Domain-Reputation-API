@@ -24,6 +24,7 @@
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [API](#api)
+- [Authentication](#authentication)
 - [Update Behavior](#update-behavior)
 - [Docker](#docker)
 - [Testing](#testing)
@@ -150,7 +151,7 @@ Then, in another terminal:
 ```bash
 curl http://localhost:8080/health
 curl http://localhost:8080/ready
-curl http://localhost:8080/v1/reputation/domain/example.com
+curl -H 'X-API-Key: your-api-key' http://localhost:8080/v1/reputation/domain/example.com
 ```
 
 Ready-to-run request collections are available in [`test/`](test/):
@@ -168,6 +169,7 @@ is git-ignored and never committed).
 | Variable                   | Default | Description                                       |
 |------------------------------|---------|-----------------------------------------------------|
 | `SERVER_PORT`               | `8080`  | HTTP listen port                                    |
+| `API_KEY`                   | *(empty)* | Required value of the `X-API-Key` header for every `/v1/*` request. Leave unset only for local development — see [Authentication](#authentication) |
 | `IPFIRE_UPDATE_INTERVAL`    | `1h`    | Interval between background updates (Go duration)   |
 | `IPFIRE_HTTP_TIMEOUT`       | `30s`   | Per-request timeout for IPFire downloads            |
 | `IPFIRE_GAMBLING_SCORE`     | `1`     | Score added when a domain is on the gambling list   |
@@ -177,7 +179,9 @@ is git-ignored and never committed).
 | `IPFIRE_VIOLENCE_SCORE`     | `1`     | Score added when a domain is on the violence list   |
 | `LOG_LEVEL`                 | `INFO`  | `DEBUG`, `INFO`, `WARN`, or `ERROR`                 |
 
-No variable here holds a secret — there is nothing to redact. Category
+`API_KEY` is the only secret this service has — never commit a real value
+to `.env.example`, source control, or a Dockerfile; inject it at runtime
+(see [Production Deployment Notes](#production-deployment-notes)). Category
 names, IPFire URLs, and their score environment variable are defined
 together in [`internal/ipfire/categories.go`](internal/ipfire/categories.go)
 (name + URL) and [`internal/config/config.go`](internal/config/config.go)
@@ -185,6 +189,26 @@ together in [`internal/ipfire/categories.go`](internal/ipfire/categories.go)
 downloader or scoring logic.
 
 ## API
+
+### Authentication
+
+Every `/v1/reputation/*` request must include the configured key in an
+`X-API-Key` header:
+
+```bash
+curl -H 'X-API-Key: your-api-key' http://localhost:8080/v1/reputation/domain/evil.com
+```
+
+A missing or incorrect key returns `401 Unauthorized`. The comparison in
+[`internal/httpapi/middleware.go`](internal/httpapi/middleware.go) is
+constant-time, so response latency can't be used to guess the key one
+byte at a time. `/health` and `/ready` are never protected, so
+orchestrator probes don't need a key.
+
+If `API_KEY` is left unset, the `/v1/*` routes run **unauthenticated** and
+the server logs a warning on startup — intended for local development
+only. Always set `API_KEY` before exposing this service outside your own
+machine.
 
 ### `GET /health`
 
@@ -202,7 +226,7 @@ that. Point your orchestrator's readiness probe here, not at `/health`.
 ### `GET /v1/reputation/domain/{domain}`
 
 ```bash
-curl http://localhost:8080/v1/reputation/domain/evil.com
+curl -H 'X-API-Key: your-api-key' http://localhost:8080/v1/reputation/domain/evil.com
 ```
 
 ```json
@@ -233,6 +257,7 @@ Minimal response for very high-throughput consumers:
 
 ```bash
 curl -X POST http://localhost:8080/v1/reputation/domains \
+  -H 'X-API-Key: your-api-key' \
   -H 'Content-Type: application/json' \
   -d '{"domains": ["evil.com", "example.com"]}'
 ```
@@ -271,6 +296,7 @@ above).
 ```bash
 docker build -t phoenix-domain-reputation .
 docker run --rm -p 8080:8080 \
+  -e API_KEY=your-api-key \
   -e IPFIRE_UPDATE_INTERVAL=1h \
   -e IPFIRE_MALWARE_SCORE=5 \
   phoenix-domain-reputation
@@ -314,10 +340,12 @@ expected coverage when submitting a change.
 - **Timeouts**: `IPFIRE_HTTP_TIMEOUT` bounds each category download; the
   HTTP server sets `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout`, and
   `IdleTimeout` to guard against slow-client resource exhaustion.
-- **Secrets**: none are required by this service. `.env` is for local
-  development only, is git-ignored, and must never be committed — inject
-  configuration via your platform's environment variable mechanism in
-  production.
+- **Secrets**: `API_KEY` is the only one this service has. `.env` is for
+  local development only, is git-ignored, and must never be committed —
+  inject `API_KEY` and the rest of the configuration via your platform's
+  environment variable or secret manager in production. Always set
+  `API_KEY` outside local development; without it, `/v1/*` is open to
+  anyone who can reach the service.
 - **Graceful shutdown**: `SIGINT`/`SIGTERM` stop the updater and drain
   in-flight HTTP requests before exit.
 
